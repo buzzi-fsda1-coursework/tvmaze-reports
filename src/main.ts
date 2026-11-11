@@ -1,9 +1,9 @@
-import { fetchEpisodes, fetchShows } from './api'
+import { fetchShows } from './api'
+import { topShows } from './ranking'
 
 async function main() {
   const shows = await fetchShows()
-  const episodes = await fetchEpisodes(shows[0].id)
-  console.log(`${shows.length} serie, ${episodes.length} episodi per "${shows[0].name}"`)
+  console.log(JSON.stringify(topShows(shows), null, 2))
 }
 
 main()
