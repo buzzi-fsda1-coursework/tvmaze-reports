@@ -155,6 +155,5 @@ export function showError(err: unknown) {
   setStatus(message)
   const status = byId('status')
   status.setAttribute('role', 'alert')
-  // TODO: move to the stylesheet
-  status.style.color = 'crimson'
+  status.classList.add('error')
 }
