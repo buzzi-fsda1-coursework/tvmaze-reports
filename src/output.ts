@@ -1,5 +1,5 @@
 import { ApiError } from './api'
-import type { EpisodesReport } from './episodesReport'
+import type { EpisodeSheet, EpisodesReport, TopEpisode } from './episodesReport'
 import type { ChannelRef, RankedShow } from './ranking'
 import type { ShowsReport } from './showsReport'
 
@@ -83,9 +83,50 @@ export function showShowsReport(report: ShowsReport) {
   document.body.append(section)
 }
 
-// TODO: still raw JSON, sheets view comes next
+function runtimeLabel({ totalMinutes, episodesWithoutRuntime }: EpisodeSheet['runtime']): string {
+  const total = `${totalMinutes.toLocaleString('it-IT')} min`
+  if (episodesWithoutRuntime === 0) return total
+  const episodes = episodesWithoutRuntime === 1 ? '1 episodio' : `${episodesWithoutRuntime} episodi`
+  return `${total} (esclusi ${episodes} senza durata)`
+}
+
+function topEpisodeLabel(ep: TopEpisode | null): string {
+  if (!ep) return 'nessun episodio con rating'
+  return `"${ep.name}", stagione ${ep.season}, episodio ${ep.number ?? '—'}, rating ${ep.rating} (ID ${ep.id})`
+}
+
+const SHEET_FIELDS: Array<[string, (s: EpisodeSheet) => Cell]> = [
+  ['Stagioni', (s) => s.seasons],
+  ['Episodi', (s) => s.episodes],
+  ['Durata totale', (s) => runtimeLabel(s.runtime)],
+  ['Primo episodio', (s) => s.airdates.first],
+  ['Ultimo episodio', (s) => s.airdates.last],
+  ['Episodio migliore', (s) => topEpisodeLabel(s.topEpisode)],
+]
+
+function sheetCard(sheet: EpisodeSheet, rank: number | undefined): HTMLElement {
+  const list = el('dl')
+  for (const [label, value] of SHEET_FIELDS) list.append(el('dt', label), el('dd', value(sheet)))
+
+  const article = el('article')
+  article.append(el('h3', `${rank ?? '—'}. ${sheet.showName} (ID ${sheet.showId})`), list)
+  return article
+}
+
 export function showEpisodesReport(report: EpisodesReport) {
-  render(logJson(report))
+  const json = logJson(report)
+  const rankById = new Map(report.basedOn.shows.map((s) => [s.id, s.rank]))
+
+  const section = el('section')
+  section.append(
+    el('h2', 'Scheda episodi delle top 3 all time'),
+    el('p', `Generato il ${new Date(report.generatedAt).toLocaleString('it-IT')} · Serie dalla classifica all time di ${report.basedOn.report}`),
+  )
+  if (report.sheets.length === 0) section.append(el('p', 'Nessuna serie nella classifica all time.'))
+  for (const sheet of report.sheets) section.append(sheetCard(sheet, rankById.get(sheet.showId)))
+  section.append(rawJson(json))
+
+  document.body.append(section)
 }
 
 export function showError(err: unknown) {
