@@ -63,6 +63,6 @@ export function buildEpisodesReport(inputs: EpisodeInput[], generatedAt: string)
       period: 'allTime',
       shows: inputs.map(({ show }) => ({ rank: show.rank, id: show.id, name: show.name })),
     },
-    shows: inputs.map(episodeSheet),
+    sheets: inputs.map(episodeSheet),
   }
 }

@@ -2,8 +2,17 @@ import { ApiError, fetchEpisodes, fetchShows } from './api'
 import { buildEpisodesReport } from './episodesReport'
 import { buildShowsReport } from './showsReport'
 
+function render(text: string, isError = false) {
+  const pre = document.createElement('pre')
+  pre.textContent = text
+  if (isError) pre.style.color = 'crimson'
+  document.body.append(pre)
+}
+
 function print(report: object) {
-  console.log(JSON.stringify(report, null, 2))
+  const json = JSON.stringify(report, null, 2)
+  console.log(json)
+  render(json)
 }
 
 async function main() {
@@ -20,6 +29,10 @@ async function main() {
 }
 
 main().catch((err) => {
-  if (err instanceof ApiError) console.error(`Impossibile completare i report. ${err.message}`)
-  else console.error('Errore inatteso durante la generazione dei report:', err)
+  const message =
+    err instanceof ApiError
+      ? `Impossibile completare i report. ${err.message}`
+      : `Errore inatteso durante la generazione dei report: ${err}`
+  console.error(message, ...(err instanceof ApiError ? [] : [err]))
+  render(message, true)
 })
