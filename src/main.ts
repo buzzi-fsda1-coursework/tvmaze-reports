@@ -1,9 +1,9 @@
 import { fetchShows } from './api'
-import { topShows } from './ranking'
+import { buildShowsReport } from './showsReport'
 
 async function main() {
   const shows = await fetchShows()
-  console.log(JSON.stringify(topShows(shows), null, 2))
+  console.log(JSON.stringify(buildShowsReport(shows), null, 2))
 }
 
 main()
