@@ -1,4 +1,4 @@
-import { ApiError } from './api'
+import { ApiError, type RetryInfo } from './api'
 import type { EpisodeSheet, EpisodesReport, TopEpisode } from './episodesReport'
 import type { ChannelRef, RankedShow } from './ranking'
 import type { ShowsReport } from './showsReport'
@@ -12,10 +12,26 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, text?: Cell): HTMLEle
   return node
 }
 
-function render(text: string, isError = false) {
-  const pre = el('pre', text)
-  if (isError) pre.style.color = 'crimson'
-  document.body.append(pre)
+// both live in index.html; missing means the page and the code are out of sync
+function byId(id: string): HTMLElement {
+  const node = document.getElementById(id)
+  if (!node) throw new Error(`#${id} missing from index.html`)
+  return node
+}
+
+export function setStatus(text: string) {
+  const status = byId('status')
+  status.textContent = text
+  status.hidden = false
+}
+
+export function hideStatus() {
+  byId('status').hidden = true
+}
+
+export function showRetry({ status, delayMs }: RetryInfo) {
+  const cause = status === 429 ? 'TVmaze ha limitato le richieste' : 'Nessuna risposta da TVmaze'
+  setStatus(`${cause}, nuovo tentativo tra ${delayMs / 1000} s…`)
 }
 
 // the JSON in the console is the brief's deliverable, whatever the page shows
@@ -80,7 +96,7 @@ export function showShowsReport(report: ShowsReport) {
     rankingTable(periods.recent.ranking),
     rawJson(json),
   )
-  document.body.append(section)
+  byId('reports').append(section)
 }
 
 function runtimeLabel({ totalMinutes, episodesWithoutRuntime }: EpisodeSheet['runtime']): string {
@@ -126,7 +142,7 @@ export function showEpisodesReport(report: EpisodesReport) {
   for (const sheet of report.sheets) section.append(sheetCard(sheet, rankById.get(sheet.showId)))
   section.append(rawJson(json))
 
-  document.body.append(section)
+  byId('reports').append(section)
 }
 
 export function showError(err: unknown) {
@@ -135,5 +151,10 @@ export function showError(err: unknown) {
       ? `Impossibile completare i report. ${err.message}`
       : `Errore inatteso durante la generazione dei report: ${err}`
   console.error(message, ...(err instanceof ApiError ? [] : [err]))
-  render(message, true)
+
+  setStatus(message)
+  const status = byId('status')
+  status.setAttribute('role', 'alert')
+  // TODO: move to the stylesheet
+  status.style.color = 'crimson'
 }

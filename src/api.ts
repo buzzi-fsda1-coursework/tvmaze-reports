@@ -8,6 +8,14 @@ export const SHOW_PAGES = [0]
 
 export class ApiError extends Error {}
 
+export interface RetryInfo {
+  path: string
+  status: number | null
+  delayMs: number
+}
+
+type OnRetry = (info: RetryInfo) => void
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -28,7 +36,7 @@ function retryDelay(res: Response | null, attempt: number): number {
 }
 
 // T is a promise to the compiler, nothing is checked at runtime
-async function getJson<T>(path: string): Promise<T> {
+async function getJson<T>(path: string, onRetry?: OnRetry): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     const res = await request(path)
     if (res?.ok) return res.json()
@@ -41,19 +49,20 @@ async function getJson<T>(path: string): Promise<T> {
 
     const delay = retryDelay(res, attempt)
     console.warn(`GET ${path}: ${res ? `HTTP ${res.status}` : 'nessuna risposta'}, nuovo tentativo tra ${delay / 1000}s`)
+    onRetry?.({ path, status: res?.status ?? null, delayMs: delay })
     await sleep(delay)
   }
 }
 
-export async function fetchShows(): Promise<Show[]> {
+export async function fetchShows(onRetry?: OnRetry): Promise<Show[]> {
   const shows: Show[] = []
   // one page at a time: more pages in parallel would hit the rate limit
   for (const page of SHOW_PAGES) {
-    shows.push(...(await getJson<Show[]>(`/shows?page=${page}`)))
+    shows.push(...(await getJson<Show[]>(`/shows?page=${page}`, onRetry)))
   }
   return shows
 }
 
-export function fetchEpisodes(showId: number): Promise<Episode[]> {
-  return getJson<Episode[]>(`/shows/${showId}/episodes`)
+export function fetchEpisodes(showId: number, onRetry?: OnRetry): Promise<Episode[]> {
+  return getJson<Episode[]>(`/shows/${showId}/episodes`, onRetry)
 }
