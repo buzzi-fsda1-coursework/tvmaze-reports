@@ -3,14 +3,14 @@ import { SHOW_PAGES } from './api'
 import { latestPremiere, premieredIn, yearInterval } from './period'
 import { topShows } from './ranking'
 
-export function buildShowsReport(shows: Show[]) {
+export function buildShowsReport(shows: Show[], generatedAt: string) {
   const anchor = latestPremiere(shows)
-  const year = Number(anchor.slice(0, 4))
-  const interval = yearInterval(year)
+  const year = anchor ? Number(anchor.slice(0, 4)) : null
+  const interval = year === null ? null : yearInterval(year)
 
   return {
     report: 'top-shows-by-rating',
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     scope: { endpoint: '/shows', pages: SHOW_PAGES },
     reference: { latestPremiere: anchor, year },
     periods: {
