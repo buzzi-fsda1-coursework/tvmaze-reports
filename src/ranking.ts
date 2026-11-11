@@ -1,4 +1,5 @@
 import type { Show } from './types'
+import { byRating, hasRating } from './utils'
 
 export interface ChannelRef {
   name: string
@@ -17,12 +18,6 @@ export interface RankedShow {
   channel: ChannelRef | null
 }
 
-type RatedShow = Show & { rating: { average: number } }
-
-function isRated(show: Show): show is RatedShow {
-  return show.rating.average !== null
-}
-
 function channelOf(show: Show): ChannelRef | null {
   if (show.network) return { name: show.network.name, type: 'network' }
   if (show.webChannel) return { name: show.webChannel.name, type: 'webChannel' }
@@ -31,8 +26,8 @@ function channelOf(show: Show): ChannelRef | null {
 
 export function topShows(shows: Show[], limit = 3): RankedShow[] {
   return shows
-    .filter(isRated)
-    .sort((a, b) => b.rating.average - a.rating.average || a.id - b.id)
+    .filter(hasRating)
+    .sort(byRating)
     .slice(0, limit)
     .map((show, i) => ({
       rank: i + 1,

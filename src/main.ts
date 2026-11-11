@@ -3,7 +3,8 @@ import { buildShowsReport } from './showsReport'
 
 async function main() {
   const shows = await fetchShows()
-  console.log(JSON.stringify(buildShowsReport(shows), null, 2))
+  const generatedAt = new Date().toISOString()
+  console.log(JSON.stringify(buildShowsReport(shows, generatedAt), null, 2))
 }
 
 main()
