@@ -21,3 +21,5 @@ export function buildShowsReport(shows: Show[], generatedAt: string) {
     },
   }
 }
+
+export type ShowsReport = ReturnType<typeof buildShowsReport>

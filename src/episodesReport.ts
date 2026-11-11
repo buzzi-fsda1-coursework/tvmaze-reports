@@ -66,3 +66,5 @@ export function buildEpisodesReport(inputs: EpisodeInput[], generatedAt: string)
     sheets: inputs.map(episodeSheet),
   }
 }
+
+export type EpisodesReport = ReturnType<typeof buildEpisodesReport>
